@@ -44,14 +44,15 @@ class CSVES(CSVKitUtility):
                 batchiter = islice(sourceiter, size)
                 yield chain([batchiter.next()], batchiter)
 
-        reader = CSVKitDictReader(self.args.file, **self.reader_kwargs)
-        action={ "index" : { "_index" : self.args.index_name, "_type" : self.args.doc_type } }
-        for rows in batch(reader, self.args.batch_size):
-            action_data_pairs = []
-            for row in rows:
-                action_data_pairs.append(action)
-                action_data_pairs.append(row)
-            es.bulk(action_data_pairs)
+        with self._open_input_file(self.args.input_path) as f:
+            reader = CSVKitDictReader(f, **self.reader_kwargs)
+            action={ "index" : { "_index" : self.args.index_name, "_type" : self.args.doc_type } }
+            for rows in batch(reader, self.args.batch_size):
+                action_data_pairs = []
+                for row in rows:
+                    action_data_pairs.append(action)
+                    action_data_pairs.append(row)
+                es.bulk(action_data_pairs)
         
 
 def launch_new_instance():
